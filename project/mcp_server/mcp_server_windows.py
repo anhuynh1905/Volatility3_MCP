@@ -13,11 +13,11 @@ VOL_SCRIPT= "/app/volatility3/vol.py"
 cwd= "/app/02_working"
 
 #Set name and instruction for LLM
-mcp = FastMCP(name="Volitality 3 MCP Server")
+mcp = FastMCP(name="Volitality 3 MCP Server for Windows")
 server_instruction = FastMCP(
     name="Volitality3",
     instructions="""
-        This server provides Volatility 3 tools for ram forensic.
+        This server provides Volatility 3 tools for ram forensic on Windows.
         Call get_version() to get Volatility 3 info.
     """,
 )
@@ -244,5 +244,5 @@ async def get_plugin_help(plugin: str) -> str:
 
 #Run the server
 if __name__ == "__main__":
-    # This runs the server, defaulting to STDIO transport
-    mcp.run()
+    # This runs the server, we will use HTTP
+    mcp.run(transport="http", host="0.0.0.0", port=8000)
