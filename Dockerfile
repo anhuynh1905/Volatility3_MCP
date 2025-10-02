@@ -8,8 +8,9 @@ COPY /project .
 RUN pip install -r requirements.txt
 
 RUN apt-get update && \
+    apt-get -y upgrade && \
     apt-get install -y --no-install-recommends \
-        golang \
+        golang-go \
         build-essential \
         cmake \
         python3-dev \
@@ -21,7 +22,7 @@ RUN apt-get update && \
     \
     #Install dwarf2json
     git clone https://github.com/volatilityfoundation/dwarf2json.git && \
-    cd dwarf2json/ \
+    cd dwarf2json && \
     go build -o /usr/local/bin/dwarf2json && \
     # Clean up the build tools and apt lists
     apt-get remove -y build-essential cmake python3-dev golang && \

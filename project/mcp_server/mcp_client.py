@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 import asyncio
 import re
+from utils import ubuntu_symbols_finder as usf 
 from fastmcp import FastMCP
 
 
@@ -132,7 +133,10 @@ async def get_linux_symbols(memory_dump_path: str):
     banners = await run_volatility(["-f", memory_dump_path, "banners"])
     return await banners
 
-
+def get_links(kernel_version: str):
+    commands = usf.find_symbols(kernel_version)
+    for command in commands:
+        print(command)
 
 #Run the server
 if __name__ == "__main__":
@@ -145,4 +149,5 @@ if __name__ == "__main__":
         if match:
             kernel_version = match.group(1).strip()
             break
+    get_links(kernel_version)
     print(kernel_version)
