@@ -15,6 +15,7 @@ RUN apt-get update && \
         cmake \
         python3-dev \
         git \
+        wget \
         ca-certificates && \
     \
     pip install --no-cache-dir volatility3 && \

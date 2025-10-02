@@ -72,7 +72,7 @@ def find_symbols(kernel_version: str):
     ddeb_filename = download_url.split("/")[-1]
     ddeb_filename_without_extension = ddeb_filename.rsplit(".", 1)[0]
     command = []
-    command.append(f"wget {download_url}")
+    command.append(f"wget -P Ubuntu_symbols/ {download_url}")
     command.append(f"dpkg-deb -x {ddeb_filename} {ddeb_filename_without_extension}/")
     command.append(
         f"dwarf2json linux --elf {ddeb_filename_without_extension}/usr/lib/debug/boot/vmlinux-{version_short} | xz > {ddeb_filename_without_extension}.json.xz"
