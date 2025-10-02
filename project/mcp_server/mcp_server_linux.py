@@ -44,6 +44,58 @@ async def run_volatility(cmd_args):
     except Exception as e:
         return f"Exception running Volatility: {str(e)}"
 
+#Volatility 3 tools
+@mcp.tool()
+async def list_available_plugins() -> str:
+    """List all available Volatility plugins"""
+    return await run_volatility(["-h"])
+
+@mcp.tool()
+async def get_image_info(memory_dump_path: str) -> str:
+
+    memory_dump_path = os.path.normpath(memory_dump_path)
+    if not os.path.isfile(memory_dump_path):
+        return f"Error: Memory dump file not found at {memory_dump_path}"
+
+@mcp.tool()
+async def run_custom_plugin(memory_dump_path: str, plugin_name: str, additional_args: str = "") -> str:
+
+    memory_dump_path = os.path.normpath(memory_dump_path)
+    if not os.path.isfile(memory_dump_path):
+        return f"Error: Memory dump file not found at {memory_dump_path}"
+  
+    cmd_args = ["-f", memory_dump_path, plugin_name]
+
+    if additional_args:
+        cmd_args.extend(additional_args.split())
+    
+    return await run_volatility(cmd_args)
+
+@mcp.tool()
+async def list_memory_dumps(search_dir: str = None) -> str:
+
+    if not search_dir:
+        search_dir = os.getcwd()
+    
+    search_dir = os.path.normpath(search_dir)
+    if not os.path.isdir(search_dir):
+        return f"Error: Directory not found at {search_dir}"
+  
+    memory_extensions = ['.raw', '.vmem', '.dmp', '.mem', '.bin', '.img', '.001', '.dump']
+    memory_files = []
+    
+    for root, _, files in os.walk(search_dir):
+        for file in files:
+            if any(file.lower().endswith(ext) for ext in memory_extensions):
+                full_path = os.path.join(root, file)
+                size_mb = os.path.getsize(full_path) / (1024 * 1024)
+                memory_files.append(f"{full_path} (Size: {size_mb:.2f} MB)")
+    
+    if not memory_files:
+        return f"No memory dump files found in {search_dir}"
+    
+    return "Found memory dump files:\n" + "\n".join(memory_files)
+
 #Resource for faster lookup
 @mcp.resource("volatility://plugins")
 async def get_volatility_plugins() -> str:
@@ -72,5 +124,5 @@ async def get_plugin_help(plugin: str) -> str:
 
 #Run the server
 if __name__ == "__main__":
-    # This runs the server, defaulting to STDIO transport
-    mcp.run()
+    # This runs the server, we will use HTTP
+    mcp.run(transport="http", host="0.0.0.0", port=8000)
