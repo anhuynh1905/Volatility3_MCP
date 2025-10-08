@@ -13,6 +13,7 @@ Place your memory dumps and forensic images here:
 - `.bin` - Binary memory images
 - `.img` - Disk/memory images
 - `.001` - Split memory files
+- `.elf` - ELF files
 
 ## Example Structure
 ```
