@@ -3,6 +3,7 @@ import sys
 import subprocess
 import json
 import shlex
+import re
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 import asyncio
@@ -22,7 +23,7 @@ server_instruction = FastMCP(
     name="Volitality3",
     instructions="""
         This server provides Volatility 3 tools for ram forensic on Linux.
-        Call get_version() to get Volatility 3 info.
+        Call get_info() to get Volatility 3 info.
     """,
 )
 
@@ -80,12 +81,66 @@ async def get_symbols(commands: list[str]) -> bool:
         except Exception as e:
             #print(f"FAILED: An unexpected error occurred: {e}")
             return False
+    return True
 
+#Volatility 3 tools
+@mcp.tool()
+async def run_pstree(memory_dump_path: str) -> str:
+    """Plugin for listing processes in a tree based on their parent process ID."""
+    memory_dump_path = os.path.normpath(memory_dump_path)
+    if not os.path.isfile(memory_dump_path):
+        return f"Error: Memory dump file not found at {memory_dump_path}"
+    return await run_volatility(["-f", memory_dump_path, "linux.pstree.PsTree"])
+
+@mcp.tool()
+async def run_pslist(memory_dump_path: str) -> str:
+    """Lists the processes present in a particular linux memory image."""
+    memory_dump_path = os.path.normpath(memory_dump_path)
+    if not os.path.isfile(memory_dump_path):
+        return f"Error: Memory dump file not found at {memory_dump_path}"
+    return await run_volatility(["-f", memory_dump_path, "linux.pslist.PsList"])
+
+@mcp.tool()
+async def run_psscan(memory_dump_path: str) -> str:
+    """Scans for processes present in a particular linux image."""
+    memory_dump_path = os.path.normpath(memory_dump_path)
+    if not os.path.isfile(memory_dump_path):
+        return f"Error: Memory dump file not found at {memory_dump_path}"
+    return await run_volatility(["-f", memory_dump_path, "linux.psscan.PsScan"])
+
+@mcp.tool()
+async def run_sockstat(memory_dump_path: str) -> str:
+    """Lists all network connections for all processes."""
+    memory_dump_path = os.path.normpath(memory_dump_path)
+    if not os.path.isfile(memory_dump_path):
+        return f"Error: Memory dump file not found at {memory_dump_path}"
+    return await run_volatility(["-f", memory_dump_path, "linux.sockstat.Sockstat"])
+
+@mcp.tool()
+async def run_Malfind(memory_dump_path: str) -> str:
+    """Lists process memory ranges that potentially contain injected code."""
+    memory_dump_path = os.path.normpath(memory_dump_path)
+    if not os.path.isfile(memory_dump_path):
+        return f"Error: Memory dump file not found at {memory_dump_path}"
+    return await run_volatility(["-f", memory_dump_path, "linux.malware.malfind.Malfind"])
+
+@mcp.tool()
+async def run_bash(memory_dump_path: str, pid: Optional[str] = None) -> str:
+    """Lists process memory ranges that potentially contain injected code."""
+    memory_dump_path = os.path.normpath(memory_dump_path)
+    if not os.path.isfile(memory_dump_path):
+        return f"Error: Memory dump file not found at {memory_dump_path}"
+    return await run_volatility(["-f", memory_dump_path, "linux.bash.Bash"])
+
+@mcp.tool()
+async def plugin_help(plugin_name: str) -> str:
+    """Help to use the plugin"""
+    return await run_volatility(plugin_name, "h")
 
 @mcp.tool()
 async def get_linux_symbols(memory_dump_path: str) -> str:
     """Get the linux symbols for Volatility"""
-    output = await run_volatility(["-f", memory_dump_path, "banners"])
+    output = await run_volatility(["-f", memory_dump_path, "banners.Banners"])
     banners = None
 
     for line in output.splitlines():
@@ -93,24 +148,20 @@ async def get_linux_symbols(memory_dump_path: str) -> str:
 
         if match:
             banners = match.group(1).strip()
-    return await get_symbols(usf.find_symbols(banners))
+    result = await get_symbols(usf.find_symbols(banners))
+    if(result):
+        return "Success adding the Linux symbols"
+    else:
+        return "Fail to optain the Linux symbols"
 
-#Volatility 3 tools
 @mcp.tool()
-async def list_available_plugins() -> str:
-    """List all available Volatility plugins"""
+async def get_info() -> str:
+    """Get Volatility 3 version and list all available plugins"""
     return await run_volatility(["-h"])
 
 @mcp.tool()
-async def get_image_info(memory_dump_path: str) -> str:
-
-    memory_dump_path = os.path.normpath(memory_dump_path)
-    if not os.path.isfile(memory_dump_path):
-        return f"Error: Memory dump file not found at {memory_dump_path}"
-
-@mcp.tool()
 async def run_custom_plugin(memory_dump_path: str, plugin_name: str, additional_args: str = "") -> str:
-
+    """Run custom plugin that's not define in tools, remember to use plugin_help() to know the requirements"""
     memory_dump_path = os.path.normpath(memory_dump_path)
     if not os.path.isfile(memory_dump_path):
         return f"Error: Memory dump file not found at {memory_dump_path}"
@@ -124,7 +175,7 @@ async def run_custom_plugin(memory_dump_path: str, plugin_name: str, additional_
 
 @mcp.tool()
 async def list_memory_dumps(search_dir: str = None) -> str:
-
+    """List all memory dumps in a folder"""
     if not search_dir:
         search_dir = os.getcwd()
     
@@ -176,4 +227,4 @@ async def get_plugin_help(plugin: str) -> str:
 #Run the server
 if __name__ == "__main__":
     # This runs the server, we will use HTTP
-    mcp.run()
+    mcp.run(transport="http", host="0.0.0.0", port=8000, path="/Linux")

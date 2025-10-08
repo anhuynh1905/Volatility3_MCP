@@ -1,1 +1,54 @@
+# Volatility3_MCP Docker-Only Platform
+# Ignore files not needed in the container
+
+# Working directory (mounted separately)
 project/02_working/
+
+# Analysis data (mounted separately)
+analysis_data/
+
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+!project/**/*.md
+
+# IDE/Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.pytest_cache/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Management scripts (not needed in container)
+manage.sh
+manage.bat
+
+# Docker files themselves
+Dockerfile
+docker-compose.yml
+.dockerignore

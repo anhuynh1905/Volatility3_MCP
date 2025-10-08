@@ -18,7 +18,7 @@ server_instruction = FastMCP(
     name="Volitality3",
     instructions="""
         This server provides Volatility 3 tools for ram forensic on Windows.
-        Call get_version() to get Volatility 3 info.
+        Call get_info() to get Volatility 3 info.
     """,
 )
 
@@ -46,13 +46,13 @@ async def run_volatility(cmd_args):
 
 #Volatility 3 tools
 @mcp.tool()
-async def list_available_plugins() -> str:
-    """List all available Volatility plugins"""
+async def get_info() -> str:
+    """Get Volatility 3 version and list all available plugins"""
     return await run_volatility(["-h"])
 
 @mcp.tool()
 async def get_image_info(memory_dump_path: str) -> str:
-
+    """Get Windows Image Info"""
     memory_dump_path = os.path.normpath(memory_dump_path)
     if not os.path.isfile(memory_dump_path):
         return f"Error: Memory dump file not found at {memory_dump_path}"
@@ -245,4 +245,4 @@ async def get_plugin_help(plugin: str) -> str:
 #Run the server
 if __name__ == "__main__":
     # This runs the server, we will use HTTP
-    mcp.run(transport="http", host="0.0.0.0", port=8000)
+    mcp.run(transport="http", host="0.0.0.0", port=8001, path="/Windows")

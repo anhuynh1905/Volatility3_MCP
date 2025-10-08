@@ -4,6 +4,7 @@ import subprocess
 import shlex
 import os
 from utils import ubuntu_symbols_finder as usf
+from fastmcp import Client
 
 BANNER_PATH = "/app/02_working/volatility/banners.txt"
 
@@ -70,18 +71,19 @@ async def get_symbols(commands: list[str]) -> bool:
             #print(f"FAILED: An unexpected error occurred: {e}")
             return False
 
+client = Client("./mcp_server_linux.py")
     
 async def main():
-    output = await run_volatility(["-f", DISK_PATH, "banners"])
-    banners = None
-
-    for line in output.splitlines():
-        match = re.search(BANNER_PATTERN, line)
-
-        if match:
-            banners = match.group(1).strip()
-
-    print(await get_symbols(usf.find_symbols(banners)))
+    async with client:
+        # Basic server interaction
+        await client.ping()
+        
+        # List available operations
+        tools = await client.list_tools()
+        resources = await client.list_resources()
+        prompts = await client.list_prompts()
+        
+        # Execute operations
 
 if __name__ == "__main__":
     asyncio.run(main())

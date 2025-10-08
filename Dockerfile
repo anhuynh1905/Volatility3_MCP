@@ -1,5 +1,8 @@
 FROM python:3-slim
 
+# Volatility3_MCP - Docker-Only Memory Forensics Platform
+# This project is designed to run EXCLUSIVELY in Docker containers
+
 # Set the working directory inside the container
 WORKDIR /app
 
@@ -51,5 +54,26 @@ RUN apt-get update && \
 
 # 3. Copy your project code (placed late to ensure fast iteration on code changes)
 
+# Create a startup script to run both MCP servers
+RUN echo '#!/bin/bash\n\
+echo "Starting Volatility3 MCP Servers..."\n\
+echo "Linux MCP Server starting on port 8000..."\n\
+python3 /app/mcp_server/mcp_server_linux.py &\n\
+LINUX_PID=$!\n\
+echo "Windows MCP Server starting on port 8001..."\n\
+python3 /app/mcp_server/mcp_server_windows.py &\n\
+WINDOWS_PID=$!\n\
+echo "Both MCP servers started successfully!"\n\
+echo "Linux MCP Server (PID: $LINUX_PID) - http://localhost:8000/Linux"\n\
+echo "Windows MCP Server (PID: $WINDOWS_PID) - http://localhost:8001/Windows"\n\
+echo "Waiting for servers..."\n\
+wait' > /app/start_servers.sh && \
+chmod +x /app/start_servers.sh
 
-CMD [ "python3", "volatility3/vol.py", "-h" ]
+# Expose both ports
+EXPOSE 8000 8001
+
+# Create volume mount point for memory dumps
+VOLUME ["/app/02_working"]
+
+CMD ["/app/start_servers.sh"]

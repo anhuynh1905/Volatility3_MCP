@@ -1,0 +1,36 @@
+version: '3.8'
+
+# Volatility3_MCP - Docker-Only Memory Forensics Platform
+# This is the ONLY supported way to run this project
+
+services:
+  volatility3-mcp:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    image: volatility3-mcp:latest
+    container_name: volatility3-mcp-servers
+    ports:
+      - "8000:8000"  # Linux MCP Server
+      - "8001:8001"  # Windows MCP Server
+    volumes:
+      # Mount your memory dumps and analysis files to 02_working
+      - "./analysis_data:/app/02_working"
+      # Optional: Mount additional symbol files
+      - "./project/Ubuntu_symbols:/app/Ubuntu_symbols"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/Linux", "&&", "curl", "-f", "http://localhost:8001/Windows"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - volatility-network
+
+networks:
+  volatility-network:
+    driver: bridge
