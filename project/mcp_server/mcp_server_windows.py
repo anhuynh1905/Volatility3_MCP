@@ -216,7 +216,7 @@ async def list_memory_dumps(search_dir: str = None) -> str:
     
     return "Found memory dump files:\n" + "\n".join(memory_files)
 
-#Resource for faster lookup
+#Resource for MCP
 @mcp.resource("volatility://plugins")
 async def get_volatility_plugins() -> str:
 

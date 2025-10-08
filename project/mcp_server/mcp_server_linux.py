@@ -2,15 +2,19 @@ import os
 import sys
 import subprocess
 import json
+import shlex
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 import asyncio
 from fastmcp import FastMCP
-
+from utils import ubuntu_symbols_finder as usf
 
 VOL_EXE = "python3"
 VOL_SCRIPT= "/app/volatility3/vol.py"
 cwd= "/app/02_working"
+cwd_symbols= "/app/Ubuntu_symbols"
+SYMBOLS="volatility3/volatility3/symbols/linux"
+BANNER_PATTERN = r"0x[0-9a-f]+\s+(Linux version .*)"
 
 #Set name and instruction for LLM
 mcp = FastMCP(name="Volitality 3 MCP Server Linux")
@@ -43,6 +47,53 @@ async def run_volatility(cmd_args):
         return stdout.decode('utf-8', errors='replace')
     except Exception as e:
         return f"Exception running Volatility: {str(e)}"
+
+async def get_symbols(commands: list[str]) -> bool:
+    for command in commands:
+        needs_shell = "|" in command or ">" in command
+        #print(f"\n--- Executing: {command} (shell={needs_shell}) ---")
+
+        if not needs_shell:
+            args = shlex.split(command)
+        else:
+            args = ["sh", "-c", command] 
+            
+        try:
+            process = await asyncio.create_subprocess_exec(
+                *args,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                cwd=cwd_symbols
+            )
+            
+            stdout, stderr = await process.communicate()
+            
+            if process.returncode != 0:
+                #print(f"FAILED (Code {process.returncode})")
+                #print(f"Error Output:\n{stderr.decode('utf-8', errors='replace')}")
+                return False 
+            
+
+        except FileNotFoundError:
+            #print(f"FAILED: Executable not found for command starting with '{args[0]}'")
+            return False
+        except Exception as e:
+            #print(f"FAILED: An unexpected error occurred: {e}")
+            return False
+
+
+@mcp.tool()
+async def get_linux_symbols(memory_dump_path: str) -> str:
+    """Get the linux symbols for Volatility"""
+    output = await run_volatility(["-f", memory_dump_path, "banners"])
+    banners = None
+
+    for line in output.splitlines():
+        match = re.search(BANNER_PATTERN, line)
+
+        if match:
+            banners = match.group(1).strip()
+    return await get_symbols(usf.find_symbols(banners))
 
 #Volatility 3 tools
 @mcp.tool()
@@ -125,4 +176,4 @@ async def get_plugin_help(plugin: str) -> str:
 #Run the server
 if __name__ == "__main__":
     # This runs the server, we will use HTTP
-    mcp.run(transport="http", host="0.0.0.0", port=8000)
+    mcp.run()

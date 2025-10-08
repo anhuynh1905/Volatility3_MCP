@@ -1,35 +1,55 @@
 FROM python:3-slim
 
+# Set the working directory inside the container
 WORKDIR /app
 
+# 1. Copy requirements.txt first (Good for Docker caching)
 COPY requirements.txt .
-COPY /project .
+COPY project .
 
-RUN pip install -r requirements.txt
-
+# 2. Install all system dependencies required for compilation AND the application to run.
+# This single RUN block installs tools, performs the Python installation, 
+# installs dwarf2json, and then cleans up the unused build tools.
 RUN apt-get update && \
     apt-get -y upgrade && \
     apt-get install -y --no-install-recommends \
+        # Dependencies for Pillow (The fix for the build error)
+        libjpeg-dev \
+        zlib1g-dev \
+        libpng-dev \
+        # Tools for Volatility/general compilation
         golang-go \
         build-essential \
         cmake \
+        xz-utils \
         python3-dev \
         git \
         wget \
         ca-certificates && \
     \
-    pip install --no-cache-dir volatility3 && \
-    pip install --no-cache-dir -e "volatility3[dev]" && \
+    # Install Python dependencies from requirements.txt
+    pip install --no-cache-dir -r requirements.txt && \
     \
-    #Install dwarf2json
+    # Install Volatility 3 and its dev/extras dependencies
+    pip install --no-cache-dir volatility3 && \
+    pip install --no-cache-dir -e "volatility3[full]" && \
+    \
+    # Install dwarf2json
     git clone https://github.com/volatilityfoundation/dwarf2json.git && \
     cd dwarf2json && \
     go build -o /usr/local/bin/dwarf2json && \
-    # Clean up the build tools and apt lists
-    apt-get remove -y build-essential cmake python3-dev golang && \
+    cd /app && \
+    rm -rf dwarf2json && \
+    \
+    # CLEANUP: Remove the large build tools and development headers
+    apt-get remove -y build-essential cmake python3-dev golang-go git \
+        libjpeg-dev zlib1g-dev libpng-dev && \
+    # Autoremove any orphaned dependencies and clean up apt lists to shrink the final image layer
     apt-get autoremove -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+# 3. Copy your project code (placed late to ensure fast iteration on code changes)
 
-#CMD [ "python3", "volatility3/vol.py", "-h" ]
+
+CMD [ "python3", "volatility3/vol.py", "-h" ]
