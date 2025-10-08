@@ -2,3 +2,4 @@
 .vscode/
 project/02_working/
 project/Ubuntu_symbols/*
+project/mcp_server/mcp_server_linux.py

@@ -9,21 +9,18 @@ services:
       context: .
       dockerfile: Dockerfile
     image: volatility3-mcp:latest
-    container_name: volatility3-mcp-servers
+    container_name: volatility3-mcp-server
     ports:
-      - "8000:8000"  # Linux MCP Server
-      - "8001:8001"  # Windows MCP Server
+      - "8000:8000" 
     volumes:
       # Mount your memory dumps and analysis files to 02_working
       - "./analysis_data:/app/02_working"
-      # Optional: Mount additional symbol files
-      - "./project/Ubuntu_symbols:/app/Ubuntu_symbols"
     environment:
       - PYTHONUNBUFFERED=1
       - PYTHONDONTWRITEBYTECODE=1
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/Linux", "&&", "curl", "-f", "http://localhost:8001/Windows"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/Volatility3"]
       interval: 30s
       timeout: 10s
       retries: 3
