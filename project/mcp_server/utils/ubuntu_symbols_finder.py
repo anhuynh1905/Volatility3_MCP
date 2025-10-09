@@ -78,4 +78,4 @@ def find_symbols(kernel_version: str):
         f"dwarf2json linux --elf {ddeb_filename_without_extension}/usr/lib/debug/boot/vmlinux-{version_short} | xz > {ddeb_filename_without_extension}.json.xz"
     )
     command.append(f"mv {ddeb_filename_without_extension}.json.xz /app/volatility3/volatility3/symbols/linux/")
-    return command
+    return command, ddeb_filename_without_extension
