@@ -1,7 +1,5 @@
 .env
 .vscode/
-project/02_working/
-project/Ubuntu_symbols/*
 project/mcp_server/testing.py
 analysis_data/*
 project/volatility3
